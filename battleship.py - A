@@ -1,0 +1,137 @@
+"""
+battleship.py
+Battleship PvP
+
+Erin, Aniel, and Malik
+
+"""
+
+import random
+
+Size = 10
+
+# row letters for the board
+Letters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
+
+# Symbols
+Water = "~"
+Ship = "S"
+Hit = "X"
+Miss = "M"
+
+Ship_length = [5, 4, 3, 3, 2]
+
+# Makes the 10x10 board 
+def make_board():
+    board = []
+    for row_num in range (Size) :
+        row = []
+        for col in range(Size) :
+            row.append(Water)
+        board.append(row)
+    return board
+
+# show the board
+def print_board(board, title):
+    print("\n" + title)
+    print("    1 2 3 4 5 6 7 8 9 10")
+
+    for row_num in range(Size):
+        print(Letters[row_num], end="  ")
+        for col in range(Size):
+            print(board[row_num][col], end="  ")
+            print()
+
+def clear_screen():
+    print("\n" * 40)
+
+# covert input like B7 into numbers
+def parse_coord(text):
+    text = text.strip().upper()
+
+    if len(text) < 2:
+        return None
+    
+    row_letter = text[0]
+    if row_letter not in Letters:
+        return None
+    
+    try:
+        col_num = int(text[1:])
+    except ValueError:
+        return None
+    
+    if col_num < 1 or col_num > Size:
+        return None
+    
+    row_num = Letters.index(row_letter)
+    col = col_num - 1
+    return (row_num, col)
+
+def reset_board(board):
+    for row_num in range(Size):
+        for col in range(Size):
+            board[row_num][col] = Water
+
+# get straight line coordinates
+def get_line_coords(start, end):
+    start_row, start_col = start
+    end_row, end_col = end
+    coords = []
+
+    if start_row == end_row:
+        step = 1 if end_col >= start_col else -1
+        col = start_col
+        while col != end_col + step:
+            coords.append((start_col, col))
+            row += step
+        return coords
+    
+    if start_col == end_col:
+        step = 1 if end_row >= start_row else -1
+        row = start_row
+        while row != end_row + step:
+            coords.append((row, start_col))
+            row += step
+            return coords
+    
+    return None
+
+def can_place_ship(board, coords):
+    for row_num, col in coords:
+        if board[row_num][col] != Water:
+            return False
+    return True
+
+def place_ship_manual(board, length, player):
+    while True: 
+        clear_screen()
+        print(player + "placing ship of length" +  str(length))
+        print_board(board, "Your ship board")
+
+        raw = input("Enter start and end like A1 A5:")
+        parts = raw.split()
+
+        if len(parts) != 2:
+            input("Invalid input, Press Enter...")
+            continue
+        
+        start = parse_coord(parts[0])
+        end = parse_coord(parts[1])
+
+        if start is None or end is None: 
+            input("Invalid coordinates. Press Enter...")
+            continue
+
+        coords = get_line_coords(start, end)
+        if coords is None or len(coords) != length:
+            input("Ship must be straight and correct length. Press Enter...")
+            continue
+
+        if not can_place_ship(board, coords):
+            input("Ship overlaps another. Press Enter...")
+            continue
+
+        for row_num, col in coords:
+            board[row_num][col] = Ship
+        return
