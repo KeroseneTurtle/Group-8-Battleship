@@ -179,10 +179,9 @@ def place_ship(board: dict[str, object], length: int):
       print(f"Ship must be exactly length {length}.\n")
       continue
 
-    for r, c in coords:
-      if any(board[r][c][1] != 0): # pyright: ignore[reportIndexIssue]
-        print("That ship overlaps another one. Try again.\n")
-        continue
+    if any(int(board[r][c][1]) != 0 for r, c in coords): # pyright: ignore[reportIndexIssue]
+      print("That ship overlaps another one. Try again.\n")
+      continue
 
     # Valid placement
     return coords
@@ -213,7 +212,7 @@ def place_ships_player(board: dict[str, object]):
 
 
 
-def place_ships_ai(board: dict[str, object]): # Erin contributed this one
+def place_ships_ai(board: dict[str, object]):
   for ship_id, length in ship_length.items():
     placed = False
 
@@ -222,18 +221,30 @@ def place_ships_ai(board: dict[str, object]): # Erin contributed this one
 
       if horizontal:
         row = random.choice(row_names)
-        col = random.randint(0, board_size - length)
-        coords = [(row, col + i) for i in range(length)]
+        col_start = random.randint(0, board_size - length)
+        coords: list[tuple[str, int]] = [(row, col_start + i) for i in range(length)]
       else:
         col = random.randint(0, board_size - 1)
-        start_row = random.randint(0, board_size - length)
-        coords = [(row_names[start_row + i], col) for i in range(length)]
+        row_start = random.randint(0, board_size - length)
+        coords = [(row_names[row_start + i], col) for i in range(length)]
 
-      # check overlap
+      # Explicit loop for type safety
+      overlap = False
       for r, c in coords:
-        if all(board[r][c][1]) == 0: # pyright: ignore[reportIndexIssue]
-          board[r][c][1] = ship_id # pyright: ignore[reportIndexIssue]
-          placed = True
+        cell_ship_id: int = board[r][c][1] # pyright: ignore[reportIndexIssue]
+        if isinstance(cell_ship_id, int) and cell_ship_id != 0:
+          overlap = True
+          break
+
+      if overlap:
+        continue  # retry placement
+
+      # Place the ship
+      for r, c in coords:
+        board[r][c][1] = ship_id # pyright: ignore[reportIndexIssue]
+
+      placed = True
+
 
 #===============================================================================
 # Malik's stuff
@@ -250,23 +261,23 @@ def fire_shot(target_board: dict[str, object], row: str, col: int):
   else:
     return "miss"
 
-
+# Function for checking if a given ship has been sunk or not
 def check_sunk(target_board: dict[str, object], ship_id: int):
   for row in row_names:
     for col in range(board_size):
       if target_board[row][col][1] == ship_id: # pyright: ignore[reportIndexIssue]
         if target_board[row][col][0] == False: # pyright: ignore[reportIndexIssue]
-          return False  # found a part that hasnt been hit
+          return False  # Found a part that hasnt been hit
   return True
 
-
+# Function that checks if all ships on a given board have been sunk or not
 def check_winner(target_board: dict[str, object]):
-    for row in row_names:
-        for col in range(board_size):
-            if target_board[row][col][1] != 0: # pyright: ignore[reportIndexIssue]
-                if target_board[row][col][0] == False: # pyright: ignore[reportIndexIssue]
-                    return False
-    return True
+  for row in row_names:
+    for col in range(board_size):
+      if target_board[row][col][1] != 0: # pyright: ignore[reportIndexIssue]
+        if target_board[row][col][0] == False: # pyright: ignore[reportIndexIssue]
+          return False # Found a ship that hasnt been sunk
+  return True
 
 
 # ai is just random for now
